@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Nesrine 🎹</title>
+
+<style>
+  :root {
+    --bg: #30012f;
+    --bg-panel: #2b0128;
+    --accent: #C98BA0;
+    --accent-2: #C9A876;
+    --text: #FBF3EC;
+    --text-dim: #D8B9C4;
+
+    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-script: 'Tangerine', cursive;
+    --font-body: 'Jost', -apple-system, sans-serif;
+  }
+
+  body.mode-pro {
+    --bg: #0A0A0A;
+    --bg-panel: #1A1A1A;
+    --accent: #C9A227;
+    --accent-2: #C9A227;
+    --text: #F7F5F2;
+    --text-dim: #9C9891;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh; overflow-x: hidden; position: relative;
+    transition: background 0.6s ease, color 0.6s ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) { *, body { animation: none !important; transition: none !important; } }
+
+  .screen {
+    min-height: 100vh; width: 100%; display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; position: relative; padding: 60px 24px;
+    opacity: 0; transform: scale(0.97);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+  }
+  .screen.show { display: flex; opacity: 1; transform: scale(1); }
+
+  .eyebrow { font-size: 11.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--accent-2); margin-bottom: 16px; }
+  h1.title { font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 5.6vw, 44px); line-height: 1.2; }
+  h1.title .script { display: block; font-family: var(--font-script); font-size: 1.6em; color: var(--accent-2); line-height: 1; margin-top: 6px; }
+  .instruction { color: var(--text-dim); font-size: 15px; margin: 14px 0 30px; }
+
+  .btn-gold {
+    font-family: var(--font-body); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase;
+    background: transparent; color: var(--text); border: 1px solid var(--accent-2);
+    padding: 14px 30px; border-radius: 2px; cursor: pointer;
+    transition: background 0.3s, color 0.3s;
+  }
+  .btn-gold:hover { background: var(--accent-2); color: var(--bg); }
+
+  /* ===================== SCÈNE 0 : sélecteur de mode ===================== */
+  .mode-choice-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .mode-card {
+    width: 170px; padding: 30px 18px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px; cursor: pointer;
+    background: rgba(255,255,255,0.04);
+    transition: transform 0.25s, border-color 0.25s;
+  }
+  .mode-card:hover { transform: translateY(-4px); border-color: var(--accent-2); }
+  .mode-card .icon { font-size: 30px; margin-bottom: 12px; }
+  .mode-card h3 { font-family: var(--font-display); font-size: 18px; margin-bottom: 6px; color: var(--text); }
+  .mode-card p { font-size: 12px; color: var(--text-dim); }
+
+  /* ===================== PIANO — 4 mélodies ===================== */
+  #melodyProgress { font-size: 13px; color: var(--accent-2); letter-spacing: 0.06em; margin-bottom: 26px; }
+
+  .game-piano-wrap { display: flex; justify-content: center; gap: 6px; margin: 16px auto 20px; user-select: none; }
+  .game-key {
+    width: 50px; height: 68px; border-radius: 4px; cursor: pointer;
+    background: linear-gradient(180deg, var(--text), #ddd);
+    border: 1px solid var(--bg);
+    display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px;
+    color: var(--bg); font-family: var(--font-display); font-size: 12px;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .game-key.lit { background: linear-gradient(180deg, var(--accent-2), var(--accent)); transform: translateY(-4px); }
+  .game-key.correct { background: linear-gradient(180deg, #A8C8A0, #7FA878); }
+  .game-key.wrong { background: linear-gradient(180deg, #D88C8C, #B85C5C); }
+  #gameFeedback { font-family: var(--font-display); font-style: italic; font-size: 17px; color: var(--accent); min-height: 26px; margin: 10px 0; }
+  #pianoGameHint { font-size: 13px; color: var(--text-dim); }
+
+  /* ===================== SCÈNE VIDÉO CHAT (récompense) ===================== */
+  #scene-cat { padding: 0; cursor: pointer; }
+  .hero-video-bg { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; }
+  .tap-hint {
+    position: absolute; bottom: 30px; left: 0; right: 0; z-index: 2;
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.75);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    animation: hintPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes hintPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+
+  /* ===================== SCÈNE FINALE ===================== */
+  #final-canvas { position: fixed; inset: 0; z-index: 30; pointer-events: none; }
+  .big-twenty {
+    font-family: var(--font-display); font-weight: 600; font-size: clamp(90px, 18vw, 170px); line-height: 1;
+    color: transparent; -webkit-text-stroke: 1.4px var(--accent-2); margin-bottom: 6px;
+  }
+  .message-box {
+    border: 1px solid var(--accent-2); background: var(--bg-panel);
+    padding: 30px 26px; margin: 24px 0; border-radius: 4px;
+  }
+  .message-box p { font-family: var(--font-display); font-size: 18px; line-height: 1.55; }
+  .signature { margin-top: 26px; font-family: var(--font-script); font-size: 28px; color: var(--accent-2); }
+</style>
+</head>
+<body>
+
+<canvas id="final-canvas"></canvas>
+
+<!-- ===================== SCÈNE 0 : choix du mode ===================== -->
+<section class="screen show" id="scene-mode">
+  <span class="eyebrow">Avant de commencer</span>
+  <h1 class="title">Choisis ton ambiance</h1>
+  <div class="mode-choice-row">
+    <div class="mode-card" onclick="chooseMode('piano')">
+      <div class="icon">🎹</div>
+      <h3>Piano</h3>
+      <p>Ambiance musicale, rose &amp; prune</p>
+    </div>
+    <div class="mode-card" onclick="chooseMode('pro')">
+      <div class="icon">✦</div>
+      <h3>Pro</h3>
+      <p>Sobre, noir &amp; or</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== PIANO : 4 mélodies à la suite ===================== -->
+<section class="screen" id="scene-piano-game">
+  <span class="eyebrow">Reproduis la mélodie</span>
+  <h1 class="title" style="font-size:28px;">🎶</h1>
+  <p id="melodyProgress">Mélodie 1 / 4</p>
+  <p id="pianoGameHint" class="instruction">Regarde bien, puis rejoue les mêmes notes</p>
+
+  <div class="game-piano-wrap" id="gamePianoWrap">
+    <div class="game-key" data-note="C4">Do</div>
+    <div class="game-key" data-note="D4">Ré</div>
+    <div class="game-key" data-note="E4">Mi</div>
+    <div class="game-key" data-note="F4">Fa</div>
+    <div class="game-key" data-note="G4">Sol</div>
+    <div class="game-key" data-note="A4">La</div>
+  </div>
+  <p id="gameFeedback"></p>
+</section>
+
+<!-- ===================== SCÈNE VIDÉO CHAT (récompense) ===================== -->
+<section class="screen" id="scene-cat" onclick="goTo('scene-final')">
+  <video class="hero-video-bg" id="catVideo" loop playsinline></video>
+  <p class="tap-hint">Touche l'écran pour continuer</p>
+</section>
+
+<!-- ===================== SCÈNE FINALE ===================== -->
+<section class="screen" id="scene-final">
+  <span class="eyebrow">Une nouvelle mélodie commence</span>
+  <div class="big-twenty">20</div>
+  <h1 class="title" style="margin-bottom:0;">Joyeux anniversaire, Nesrine ✨</h1>
+
+  <div class="message-box">
+    <!-- TODO TEXTE : personnalise si besoin -->
+    <p> Que cette année t'apporte autant de belles notes que tu en donnes autour de toi 🤍</p>
+  </div>
+
+  <div class="signature">— Rania</div>
+</section>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Tangerine:wght@700&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script>
+  // ============================================================
+  // CAT_VIDEO_FILENAME — 
+  // ============================================================
+  const CAT_VIDEO_FILENAME = "HPCat.mp4";
+  document.getElementById('catVideo').src = CAT_VIDEO_FILENAME;
+
+  function playCatVideoWithSound() {
+    const video = document.getElementById('catVideo');
+    video.muted = false;
+    video.currentTime = 0;
+    video.play().catch(() => {
+      // si le navigateur refuse quand même, on retente en muet
+      video.muted = true; video.play();
+    });
+  }
+
+  // ============================================================
+  // Sélecteur de mode
+  // ============================================================
+  function chooseMode(mode) {
+    if (mode === 'pro') document.body.classList.add('mode-pro');
+    goTo('scene-piano-game');
+    setTimeout(startMelody, 500);
+  }
+
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('show'));
+    document.getElementById(id).classList.add('show');
+  }
+
+  // ============================================================
+  // Web Audio
+  // ============================================================
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const noteFrequencies = { C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00, A4:440.00 };
+  function playNote(freq, duration = 0.5) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle'; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + duration);
+  }
+  function ensureAudio() { if (audioCtx.state === 'suspended') audioCtx.resume(); }
+
+  // ============================================================
+  // 4 mélodies, de la plus courte à la plus longue
+  // ============================================================
+  const melodies = [
+    ['C4', 'E4', 'G4'],
+    ['G4', 'F4', 'E4', 'D4'],
+    ['C4', 'C4', 'G4', 'G4', 'A4'],
+    ['E4', 'D4', 'C4', 'D4', 'E4', 'E4'],
+  ];
+  let currentMelodyIndex = 0;
+  let userProgress = 0;
+
+  function startMelody() {
+    document.getElementById('melodyProgress').textContent = `Mélodie ${currentMelodyIndex + 1} / ${melodies.length}`;
+    document.getElementById('pianoGameHint').textContent = 'Regarde bien, puis rejoue les mêmes notes';
+    document.getElementById('gameFeedback').textContent = '';
+    userProgress = 0;
+    setTimeout(playMelodyDemo, 500);
+  }
+
+  function playMelodyDemo() {
+    const sequence = melodies[currentMelodyIndex];
+    sequence.forEach((note, i) => {
+      setTimeout(() => {
+        ensureAudio(); playNote(noteFrequencies[note], 0.45);
+        const key = document.querySelector(`.game-key[data-note="${note}"]`);
+        key.classList.add('lit');
+        setTimeout(() => key.classList.remove('lit'), 300);
+        if (i === sequence.length - 1) {
+          setTimeout(() => { document.getElementById('pianoGameHint').textContent = 'À toi de jouer !'; }, 450);
+        }
+      }, i * 600);
+    });
+  }
+
+  document.querySelectorAll('#gamePianoWrap .game-key').forEach((key) => {
+    key.addEventListener('click', () => {
+      ensureAudio();
+      const note = key.dataset.note;
+      playNote(noteFrequencies[note], 0.45);
+      const sequence = melodies[currentMelodyIndex];
+
+      if (note === sequence[userProgress]) {
+        key.classList.add('correct'); setTimeout(() => key.classList.remove('correct'), 300);
+        userProgress++;
+        if (userProgress === sequence.length) {
+          currentMelodyIndex++;
+          if (currentMelodyIndex === melodies.length) {
+            document.getElementById('gameFeedback').textContent = 'Bravo 🎶 Toutes les mélodies trouvées !';
+            document.getElementById('pianoGameHint').textContent = '';
+            playCatVideoWithSound(); // appelé ICI, dans le clic direct → son autorisé
+            setTimeout(() => goTo('scene-cat'), 1300);
+          } else {
+            document.getElementById('gameFeedback').textContent = 'Bravo, mélodie suivante ✨';
+            setTimeout(startMelody, 1000);
+          }
+        }
+      } else {
+        key.classList.add('wrong'); setTimeout(() => key.classList.remove('wrong'), 300);
+        document.getElementById('gameFeedback').textContent = 'Presque… essaie encore 🎹';
+        userProgress = 0;
+        setTimeout(playMelodyDemo, 900);
+      }
+    });
+  });
+
+  let skipClickTimes = [];
+  document.addEventListener('click', (e) => {
+    const now = Date.now();
+    skipClickTimes.push(now);
+    skipClickTimes = skipClickTimes.filter((t) => now - t < 900);
+    if (skipClickTimes.length >= 3) {
+      skipClickTimes = [];
+      if (!document.getElementById('scene-final').classList.contains('show')) {
+        playCatVideoWithSound();
+        goTo('scene-cat');
+      }
+    }
+  });
+
+  // ============================================================
+  // Effets flottants sur la scène finale
+  // ============================================================
+  const finalObserver = new MutationObserver(() => {
+    const el = document.getElementById('scene-final');
+    if (el.classList.contains('show') && !el.dataset.started) {
+      el.dataset.started = 'true';
+      launchFinalEffects();
+    }
+  });
+  finalObserver.observe(document.getElementById('scene-final'), { attributes: true, attributeFilter: ['class'] });
+
+  function launchFinalEffects() {
+    const canvas = document.getElementById('final-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const isPro = document.body.classList.contains('mode-pro');
+    const colors = isPro ? ['#C9A227', '#F7F5F2'] : ['#C98BA0', '#C9A876', '#FBF3EC'];
+
+    const items = Array.from({ length: 40 }, () => ({
+      x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.6,
+      size: 4 + Math.random() * 5, speedY: 0.7 + Math.random() * 1.1, speedX: (Math.random()-0.5)*0.8,
+      rotation: Math.random()*360, rotSpeed: (Math.random()-0.5)*3,
+      color: colors[Math.floor(Math.random()*colors.length)],
+    }));
+    let frame = 0;
+    function animate() {
+      frame++;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      items.forEach((p) => {
+        p.y += p.speedY; p.x += p.speedX; p.rotation += p.rotSpeed;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate((p.rotation*Math.PI)/180);
+        ctx.fillStyle = p.color; ctx.globalAlpha = 0.8;
+        ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
+        ctx.restore();
+      });
+      if (frame < 500) requestAnimationFrame(animate);
+    }
+    animate();
+  }
+</script>
+
+</body>
+</html>
